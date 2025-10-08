@@ -2,50 +2,46 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')  // Jenkins credential ID
-        DOCKER_IMAGE = "gourikulkarni/java-docker-app"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        IMAGE_NAME = "gourikulkarni/java-docker-app"
     }
 
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'main', url:'https://github.com/Gouri5104/java-docker-jenkins.git'
-            }
-        }
-
         stage('Build JAR') {
             steps {
-                bat 'mvn clean package'
+                echo "🔧 Building Java application..."
+                bat 'mvn clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE:latest .'
-                }
+                echo "🐳 Building Docker image..."
+                bat "docker build -t %IMAGE_NAME% ."
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                script {
-                    sh """
-                    echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
-                    docker push $DOCKER_IMAGE:latest
-                    """
-                }
+                echo "🚀 Pushing image to Docker Hub..."
+                bat """
+                    echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin
+                    docker tag %IMAGE_NAME%:latest %IMAGE_NAME%:%BUILD_NUMBER%
+                    docker push %IMAGE_NAME%:latest
+                    docker push %IMAGE_NAME%:%BUILD_NUMBER%
+                """
             }
         }
     }
 
     post {
         success {
-            echo "Docker image successfully pushed to Docker Hub!"
+            echo "✅ Build and push completed successfully!"
         }
         failure {
-            echo "Build failed. Check logs."
+            echo "❌ Build failed. Please check the logs."
         }
     }
 }
+
 
