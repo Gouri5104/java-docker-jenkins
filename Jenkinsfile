@@ -2,49 +2,49 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')  // Jenkins credential ID
-        DOCKER_IMAGE = "gourikulkarni/java-docker-app"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        IMAGE_NAME = "gouri5104/java-docker-app"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main', url:'https://github.com/Gouri5104/java-docker-jenkins.git'
+                git branch: 'main', url: 'https://github.com/Gouri5104/java-docker-jenkins.git'
             }
         }
 
         stage('Build JAR') {
             steps {
-                sh 'mvn clean package'
+                echo "Building Java application..."
+                bat 'mvn clean package -DskipTests'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    sh 'docker build -t $DOCKER_IMAGE:latest .'
-                }
+                echo "Building Docker image..."
+                bat "docker build -t %IMAGE_NAME% ."
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                script {
-                    sh """
-                    echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
-                    docker push $DOCKER_IMAGE:latest
-                    """
-                }
+                echo "Pushing image to Docker Hub..."
+                bat '''
+                    echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin
+                    docker push %IMAGE_NAME%
+                '''
             }
         }
     }
 
     post {
         success {
-            echo "Docker image successfully pushed to Docker Hub!"
+            echo "✅ Build and push successful!"
         }
         failure {
-            echo "Build failed. Check logs."
+            echo "❌ Build failed. Check logs."
         }
     }
 }
+
