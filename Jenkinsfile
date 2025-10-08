@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'master', url:'https://github.com/Gouri5104/java-docker-jenkins.git'
+                git branch: 'main', url:'https://github.com/Gouri5104/java-docker-jenkins.git'
             }
         }
 
