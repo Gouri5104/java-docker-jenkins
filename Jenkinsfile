@@ -2,46 +2,50 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
-        IMAGE_NAME = "gourikulkarni/java-docker-app"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')  // Jenkins credential ID
+        DOCKER_IMAGE = "gourikulkarni/java-docker-app"
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Gouri5104/java-docker-jenkins.git'
+            }
+        }
+
         stage('Build JAR') {
             steps {
-                echo "🔧 Building Java application..."
-                bat 'mvn clean package -DskipTests'
+                bat 'mvn clean package'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                echo "🐳 Building Docker image..."
-                bat "docker build -t %IMAGE_NAME% ."
+                script {
+                    bat 'docker build -t $DOCKER_IMAGE:latest .'
+                }
             }
         }
 
         stage('Push to Docker Hub') {
             steps {
-                echo "🚀 Pushing image to Docker Hub..."
-                bat """
-                    echo %DOCKERHUB_CREDENTIALS_PSW% | docker login -u %DOCKERHUB_CREDENTIALS_USR% --password-stdin
-                    docker tag %IMAGE_NAME%:latest %IMAGE_NAME%:%BUILD_NUMBER%
-                    docker push %IMAGE_NAME%:latest
-                    docker push %IMAGE_NAME%:%BUILD_NUMBER%
-                """
+                script {
+                    bat """
+                    echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
+                    docker push $DOCKER_IMAGE:latest
+                    """
+                }
             }
         }
     }
 
     post {
         success {
-            echo "✅ Build and push completed successfully!"
+            echo "Docker image successfully pushed to Docker Hub!"
         }
         failure {
-            echo "❌ Build failed. Please check the logs."
+            echo "Build failed. Check logs."
         }
     }
 }
-
 
