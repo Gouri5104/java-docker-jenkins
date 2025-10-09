@@ -1,51 +1,47 @@
 pipeline {
-    agent any
+  agent any
+  options { timestamps() }
 
-    environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')  // Jenkins credential ID
-        DOCKER_IMAGE = "gourikulkarni/java-docker-app"
+  environment {
+    DOCKER_IMAGE = 'your-dockerhub-username/java-docker-app'
+  }
+
+  stages {
+    stage('Build JAR') {
+      steps {
+        bat 'mvn -v'
+        bat 'mvn clean package'
+      }
     }
 
-    stages {
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Gouri5104/java-docker-jenkins.git'
-            }
-        }
-
-        stage('Build JAR') {
-            steps {
-                bat 'mvn clean package'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    bat 'docker build -t $DOCKER_IMAGE:latest .'
-                }
-            }
-        }
-
-        stage('Push to Docker Hub') {
-            steps {
-                script {
-                    bat """
-                    echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
-                    docker push $DOCKER_IMAGE:latest
-                    """
-                }
-            }
-        }
+    stage('Docker preflight') {
+      steps {
+        bat 'docker version'
+      }
     }
 
-    post {
-        success {
-            echo "Docker image successfully pushed to Docker Hub!"
-        }
-        failure {
-            echo "Build failed. Check logs."
-        }
+    stage('Build Docker Image') {
+      steps {
+        bat 'docker build -t %DOCKER_IMAGE%:latest -t %DOCKER_IMAGE%:%BUILD_NUMBER% .'
+      }
     }
+
+    stage('Push to Docker Hub') {
+      steps {
+        withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'DH_USER', passwordVariable: 'DH_PASS')]) {
+          bat '''
+            echo %DH_PASS% | docker login -u %DH_USER% --password-stdin
+            docker push %DOCKER_IMAGE%:latest
+            docker push %DOCKER_IMAGE%:%BUILD_NUMBER%
+          '''
+        }
+      }
+    }
+  }
+
+  post {
+    success { echo "Pushed: ${env.DOCKER_IMAGE}:latest and :${env.BUILD_NUMBER}" }
+    failure { echo 'Build failed. Check logs.' }
+  }
 }
 
