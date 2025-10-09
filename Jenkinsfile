@@ -9,8 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-               git branch: 'main', url: 'https://github.com/Gouri5104/java-docker-jenkins.git'
-
+                git 'https://github.com/Gouri5104/java-docker-jenkins.git'
             }
         }
 
@@ -22,7 +21,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %DOCKER_IMAGE%:latest .'
+                script {
+                    bat 'docker build -t $DOCKER_IMAGE:latest .'
+                }
             }
         }
 
@@ -37,6 +38,7 @@ pipeline {
             }
         }
     }
+
     post {
         success {
             echo "Docker image successfully pushed to Docker Hub!"
