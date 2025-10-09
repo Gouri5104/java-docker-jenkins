@@ -25,8 +25,6 @@ pipeline {
                 bat 'docker build -t %DOCKER_IMAGE%:latest .'
             }
         }
-    }
-}
 
         stage('Push to Docker Hub') {
             steps {
@@ -39,7 +37,6 @@ pipeline {
             }
         }
     }
-
     post {
         success {
             echo "Docker image successfully pushed to Docker Hub!"
