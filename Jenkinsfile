@@ -25,7 +25,8 @@ pipeline {
                 bat 'docker build -t %DOCKER_IMAGE%:latest .'
             }
         }
-        }
+    }
+}
 
         stage('Push to Docker Hub') {
             steps {
