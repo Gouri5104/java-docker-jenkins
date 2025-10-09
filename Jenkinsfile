@@ -22,10 +22,9 @@ pipeline {
 
         stage('Build Docker Image') {
             steps {
-                script {
-                    bat 'docker build -t $DOCKER_IMAGE:latest .'
-                }
+                bat 'docker build -t %DOCKER_IMAGE%:latest .'
             }
+        }
         }
 
         stage('Push to Docker Hub') {
